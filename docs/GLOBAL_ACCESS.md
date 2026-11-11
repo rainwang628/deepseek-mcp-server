@@ -62,7 +62,38 @@ dry-run 返回输入估算 173、最大输出 128、费用估算 $0.00073524；�
 ```
 
 启动采用官方 `tunnel-client runtimes connect` 的本机进程监督；必须看到 runtime 状态运行、healthy、ready 后才报告就绪。
-不是通过 nohup 或公开端口维持隧道。Mac 仍须开机、联网和保持唤醒；重启/休眠恢复不能在未实测时声称可靠。
+不是通过 nohup 或公开端口维持隧道。Mac 仍须开机、联网和保持唤醒。
+
+### macOS 登录后自动启动
+
+系统重启会结束本机隧道进程；只运行一次启动命令不会自动注册登录自启。
+在已有隧道与钥匙串凭据配置完成后，用本项目的 Bun 安装用户级 LaunchAgent：
+
+```bash
+.runtime/bun/bun macos/autostart.mjs render  # 先在 .private/ 生成待检查的 plist
+.runtime/bun/bun macos/autostart.mjs install
+.runtime/bun/bun macos/autostart.mjs status
+```
+
+任务 `com.rain.deepseek-tunnel` 安装在当前用户的 `~/Library/LaunchAgents/`，登录桌面时执行，
+每 60 秒检查一次。隧道停止时调用现有受管理的 runtime 启动命令；已运行的客户端自行处理网络重连，
+不会因为暂时未 ready 而反复重启。登录时网络或钥匙串尚未就绪导致启动失败，会在后续检查时重试。
+变更操作使用 macOS `lockf` 串行化，避免自动检查与手动启动/停止并发。
+
+macOS 的「系统设置 → 通用 → 登录项与扩展 → 后台 App 活动」也必须允许该任务。
+本机留存的官方 Bun 运行器在该列表按签名开发者显示为 **Jarred Sumner**；应先核对关联的是
+本项目的 `com.rain.deepseek-tunnel`，再开启对应项。后台活动关闭时，plist 仍可存在，
+但系统会卸载任务；`launchctl enable` 及安装时短暂显示已加载，不能代替这项后台运行授权。
+
+`./stop-tunnel.command` 同时创建 `.private/tunnel-autostart-paused`，保持手动停止；
+`./start-tunnel.command` 清除暂停标记并恢复启动。移除自启用
+`.runtime/bun/bun macos/autostart.mjs uninstall`，已运行的隧道仍可用停止命令关闭。
+日志在忽略提交的 `.private/autostart.stdout.log` 和 `.private/autostart.stderr.log`；
+plist 不含密钥，凭据仍从原钥匙串读取，模型与共享预算配置不变。
+
+这属于**用户登录后自启**，不会在 FileVault 解锁或用户登录之前运行。
+安装后应核验 launchd 已加载、退出码、runtime 健康状态及远程工具；
+人工停止/自动恢复演练不等于已实际重启整台 Mac，重启与休眠恢复仍须分别实测。
 
 插件创建并安装到本人 ChatGPT 账号后，在其他对话选择“DeepSeek 助手”；已有会话刷新工具目录。
 工具应只有 `health_check` 与 `ask_deepseek`。首次核对状态和 dry-run，不发送私有历史或凭据。
@@ -106,3 +137,4 @@ ChatGPT 网页、iOS 和 Codex 是否展示状态文本由客户端决定；服�
 - [Codex MCP 配置与会话加载](https://learn.chatgpt.com/docs/extend/mcp)
 - [Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
 - [ChatGPT 自定义 MCP 插件](https://developers.openai.com/api/docs/guides/custom-mcp-server)
+- [Apple：LaunchAgent 与定时任务](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html)
