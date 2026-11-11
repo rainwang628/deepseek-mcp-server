@@ -1,6 +1,7 @@
 # HTTPS / OAuth 部署说明（尚未执行）
 
-本次只交付模板，**没有购买主机、开通收费服务或把服务暴露到公网**。
+公网 HTTPS/OAuth 路径只交付模板，**没有购买主机、开通收费服务或把本地接口暴露到公网**。
+本机另已按用户授权建立独立私有 Tunnel 和账号级插件，实际状态见 [GLOBAL_ACCESS.md](GLOBAL_ACCESS.md)。
 先人工审核 PR，再由用户确认目标主机、域名、IdP 和费用后执行本节。
 
 建议单主机 Node.js 24 + 本地持久 SQLite + Caddy TLS 终止。外部 URL 为 `https://mcp.example.com/mcp`，

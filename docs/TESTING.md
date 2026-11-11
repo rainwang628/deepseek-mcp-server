@@ -4,7 +4,7 @@
 
 2026-11-11，macOS arm64，Node.js **24.22.1**，TypeScript **7.0.2**，
 官方 MCP SDK **1.32.2**，使用锁定依赖。
-TypeScript 严格编译通过；`npm test` **27 / 27 通过**。
+TypeScript 严格编译通过；初始验收 27 项，全局 stdio 增补后 `npm test` **29 / 29 通过**。
 
 | 验收内容 | 结果 |
 | --- | --- |
@@ -17,6 +17,8 @@ TypeScript 严格编译通过；`npm test` **27 / 27 通过**。
 | 401/429/503、超时、重定向、无效/超大响应 | 通过，不重试，保留不确定费用 |
 | Bearer、OAuth/JWKS、issuer/audience/exp/scope/owner | 通过，OAuth 在本地签名模拟 |
 | Host、Origin、JSON/body 大小、日志脱敏 | 通过，日志无测试提示词、回答或凭据 |
+| stdio 从其他工作目录启动、工具发现、协议与日志分离 | 通过，子进程同样阻止非回环 fetch |
+| stdio 与 HTTP 跨进程共享预算和重复 UUID | 通过，共用相同 SQLite 文件，未绕过次数限制 |
 
 测试固定使用新临时数据库，不继承 `process.env` 的真实凭据。
 每个测试进程给 `fetch` 加非回环地址拦截，即使付费开关有回归也不能访问真实推理 API。
@@ -38,11 +40,13 @@ npm start
 
 另开同目录终端运行 `npm run smoke`。已有 `.env` 不会被初始化命令覆盖。
 CLI Smoke 验证存活、工具发现、health_check 和 dry-run；完整 Mock 推理由自动集成测试验证。
-本地 `.env` 及所有默认配置保持关闭路由和付费。
+初始 CLI 验收时，本地 `.env` 及代码默认配置保持关闭路由和付费；此后用户明确要求正式启用，
+当前本机运行状态和全局配置见 [GLOBAL_ACCESS.md](GLOBAL_ACCESS.md)，代码默认值没有改成开启。
 本机 3000 已有其他服务，CLI 启动/Smoke 通过临时环境覆盖使用 `127.0.0.1:43123`；未停止或修改原服务。
 如本机仍有冲突，可同时覆盖 `PORT` 与 `PUBLIC_URL`，两者保持一致；Smoke 使用相同覆盖值。
 
-Docker 镜像、Compose、Caddy/TLS、云主机、真实 IdP 和用户 ChatGPT/Plus/iOS 端到端均未验收。
+Docker 镜像、Compose、Caddy/TLS、云主机、真实 IdP 和 iOS 均未验收。
+用户 Plus 网页版已通过私有 Tunnel 实际调用 health_check 和 dry-run，网页真实推理尚未进行。
 没有创建收费资源。上述自动测试未调用真实 DeepSeek；后续一次单独获准的真实调用记录如下。
 
 ## 一次真实 DeepSeek 调用验收
@@ -69,7 +73,23 @@ Key、原始本地结果、UUID 防重记录和 SQLite 均留在忽略提交的�
 原始结果为 `.runtime/live-validation-result.json`，账本为 `data/live-validation.sqlite`。
 记录会阻止同一授权的再次派发；本次一次性授权已经使用，不能据此继续调用。
 价格来源见 [COSTS.md](COSTS.md)，金额是根据 API 返回用量计算的估算，**供应商实际账单与余额未核验**。
-本次没有公网部署，未测试真实 OAuth 登录，也不能据此声称用户 Plus 网页版或 iOS 已接通。
+该次真实推理测试没有公网部署，未测试真实 OAuth 登录，也不能单凭它认定网页或 iOS 已接通；
+之后独立进行的网页工具验证见下节，iOS 仍未实测。
+
+## 全局入口与网页工具验收
+
+本机 Codex 已增加用户级 `deepseek` stdio MCP，从项目外启动完成工具发现和 health_check。
+新增两项回环 Mock 测试覆盖 stdio 协议/日志隔离，以及 stdio 与 HTTP 跨进程共享预算和 UUID 防重复，合计 29 项通过。
+独立 Secure MCP Tunnel 的创建与账号插件安装得到用户操作时确认；没有复用或修改钱迹的隧道及业务配置。
+官方 managed runtime 和 doctor 均通过检查，插件页显示已连接。
+[网页验收对话](https://chatgpt.com/c/6af42a35-a3f0-83ee-a56a-2b343ce157e6) 中实际调用两个工具：
+
+- health_check：live、`deepseek-v4-pro`、分流及付费开启，单次/每日/累计限额为 $0.02 / $0.10 / $1。
+- ask_deepseek：明确 `dry_run=true`，输入估算 173、最大输出 128、费用估算 $0.00073524。
+- 账本调用数仍为 1、已记账估算 $0.00020724、未结算预留 0，本次安装验收没有新增 DeepSeek 推理调用。
+
+网页真实 DeepSeek 推理、iPhone 实际调用、机器重启及休眠恢复尚未验收。
+“账号级可用”与“所有窗口已自动调用”是不同状态；旧窗口需要加载工具目录，按各宿主批准规则使用。
 
 ## 正式测试所需条件
 

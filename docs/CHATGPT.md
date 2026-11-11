@@ -3,6 +3,10 @@
 核验日期：2026-11-11。依据 [OpenAI 官方自定义 MCP 说明](https://developers.openai.com/api/docs/guides/custom-mcp-server)
 和 [认证说明](https://developers.openai.com/plugins/build/auth)。实际入口、账号和工作区权限以用户页面为准。
 
+本机当前采用已连接的账号级 [DeepSeek 助手](https://chatgpt.com/plugins/plugin_asdk_app_6af4292e29948191917b0a1ea39019af)，
+通过独立私有 Tunnel 访问 stdio；网页 health_check 和 dry-run 已实测。其他对话选择该插件后使用，
+已有窗口可能需要刷新工具目录，详见 [全局接入记录](GLOBAL_ACCESS.md)。下节公网 HTTPS/OAuth 是另一种待部署方式。
+
 ## 网页版连接（正式部署获准之后）
 
 1. 先完成 [HTTPS/OAuth 部署](DEPLOYMENT.md)。保持 `ROUTING_ENABLED=false`、`ALLOW_PAID_REQUESTS=false`，
@@ -34,7 +38,7 @@
 | 标准 MCP 客户端 → 本地 Mock | 已通过 | `npm test` 可复现 |
 | HTTPS 公网可达、真实 TLS | 未部署/未验证 | 用户确认的目标环境和域名 |
 | 真实 IdP 登录、授权码、PKCE、刷新 | 未验证 | 已配 IdP、owner 账号与匹配回调 |
-| 用户 Plus 网页版可添加并调用此自定义服务 | **未验证** | 该账号实际页面权限及一次 Mock 对话回传 |
+| 用户 Plus 网页版添加/连接及工具调用 | **已验证** | 独立私有 Tunnel；health_check 和 dry-run 成功，网页真实推理未测 |
 | 用户 iOS ChatGPT 发现/启用/调用该服务 | **未验证** | 实际 iOS 版本、相同账号/工作区和一次端到端调用 |
 | Plus 剩余额度百分比 | **没有读取能力** | 可靠官方接口及授权；本项目没有此接口 |
 | 真实 DeepSeek Key、官方模型列表和一次推理 | **本地 MCP 已通过** | 2026-11-11，`deepseek-v4-pro` 返回 `MCP_OK`；后续请求需新授权 |

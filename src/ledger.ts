@@ -11,7 +11,7 @@ export class BudgetLedger {
     if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
     this.db = new DatabaseSync(path);
     if (path !== ':memory:') chmodSync(path, 0o600);
-    this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
+    this.db.exec(`PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL;
       CREATE TABLE IF NOT EXISTS calls (
         mode TEXT NOT NULL, request_id TEXT NOT NULL, day TEXT NOT NULL,
         status TEXT NOT NULL CHECK(status IN ('pending','succeeded','uncertain')),

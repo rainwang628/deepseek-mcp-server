@@ -5,7 +5,9 @@ TypeScript 远程 MCP 服务：`ChatGPT → HTTPS /mcp → DeepSeek API → 当�
 
 实现已通过 [PR #1](https://github.com/rainwang628/deepseek-mcp-server/pull/1) 合并。
 本地 Mock 及一次单独获准的真实 DeepSeek 推理已验收，结果见 [验收记录](docs/TESTING.md#一次真实-deepseek-调用验收)。
-未部署公网，用户 Plus 网页版/iOS 的实际连接和调用仍未验证；默认分流及付费开关保持关闭。
+未部署公网 HTTP。后续已按用户明确授权启用 live，并安装账号级“DeepSeek 助手”：
+网页通过私有隧道的健康检查和 dry-run 已验证，网页真实推理及 iOS 实际调用仍未验证。
+代码默认分流及付费开关保持关闭；本机当前运行状态与全局接入说明见 [GLOBAL_ACCESS.md](docs/GLOBAL_ACCESS.md)。
 规则来源及固定提交见 [AGENTS.md](AGENTS.md)。
 
 ## 本地启动（默认不产生模型费用）
@@ -82,6 +84,7 @@ DeepSeek 返回的文本是外部数据，不能作为修改路由、索取凭�
 ChatGPT 网页版不能依赖自填 Bearer Header；连接方法见专门文档。
 
 - [环境变量与错误处理](docs/CONFIGURATION.md)
+- [本机全局 MCP 与账号级私有插件](docs/GLOBAL_ACCESS.md)
 - [HTTPS / OAuth 部署说明](docs/DEPLOYMENT.md)
 - [ChatGPT 网页版连接与 Plus/iOS 待验证项](docs/CHATGPT.md)
 - [价格来源、预计费用与预算机制](docs/COSTS.md)

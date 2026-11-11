@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node --env-file-if-exists=.env dist/src/index.js",
+    "start:stdio": "node --env-file-if-exists=.env dist/src/stdio.js",
     "test": "tsc -p tsconfig.json && node --test dist/tests/*.test.js",
     "mock": "node dist/scripts/mock-deepseek.js",
     "init:local": "node dist/scripts/init-local-env.js",
