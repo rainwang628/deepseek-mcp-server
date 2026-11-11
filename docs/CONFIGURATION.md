@@ -19,7 +19,7 @@
 | `MOCK_DEEPSEEK_URL` | `http://127.0.0.1:4010` | 只接受数字回环 HTTP origin，拒绝域名、路径、查询和凭据 |
 | `ROUTING_ENABLED` | `false` | 推理前必须明确开启；只接受字面量 `true` / `false` |
 | `ALLOW_PAID_REQUESTS` | `false` | 独立付费授权门；只适用于 live 模式 |
-| `MAX_OUTPUT_TOKENS` | `2048` | 服务端单次输出上限；最高可配 8192 |
+| `MAX_OUTPUT_TOKENS` | `2048` | 服务端单次输出上限；最高可配 20480，仍同时受总 Token 与单次费用限制 |
 | `DEFAULT_OUTPUT_TOKENS` | `512` | 未指定 `max_output_tokens` 时使用，不得高于输出上限 |
 | `MAX_TOTAL_TOKENS` | `16384` | 保守输入估算 + 最大输出之和上限；不是官方 tokenizer 的精确计数 |
 | `MAX_INPUT_BYTES` | `12000` | JSON 编码后的 messages 的 UTF-8 字节上限，涵盖系统/用户文本 |

@@ -12,7 +12,7 @@ export const askSchema = z.strictObject({
   prompt: z.string().min(1).max(100000).describe('Only the task/content explicitly delegated by the user; avoid secrets.'),
   system_prompt: z.string().max(100000).optional(),
   model: modelSchema.optional().describe('Official documented model ID; defaults to the operator-selected model.'),
-  max_output_tokens: z.number().int().min(1).max(8192).optional(),
+  max_output_tokens: z.number().int().min(1).max(20480).optional(),
   max_cost_usd: z.number().finite().positive().max(1000).optional().describe('Optional per-call limit, in addition to the stricter operator limit.'),
   dry_run: z.boolean().default(false).describe('Estimate only: no inference, no credential check, no budget debit. Works with routing disabled.'),
 });
