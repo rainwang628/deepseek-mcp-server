@@ -33,6 +33,10 @@
 | `MAX_CONCURRENT_REQUESTS` | `2` | 每进程并行 MCP POST 上限，超出 HTTP 429 |
 | `LEDGER_PATH` | `data/budget.sqlite` | 持久卷中的 SQLite；`:memory:` 只用于单元测试 |
 
+本机运营配置见 [GLOBAL_ACCESS.md 的分流范围与费用](GLOBAL_ACCESS.md#分流范围与费用)：用户于 2026-11-12
+明确授权单次上限 $0.05，以容纳 20480 Token 输出的预留；其他共享预算保持不变。
+表中是新实例默认值，不应仅为调整一台已授权服务而修改默认付费开关或重置账本。
+
 OAuth scope 固定 `deepseek:invoke`，支持 RS256 / ES256 / EdDSA。HS256、自签名伪造令牌、过期/缺少 exp、
 错误 issuer/audience/scope/subject 均拒绝。只将 `http://127.0.0.1` 或 `[::1]` 视为本地测试例外。
 授权服务器的登录、授权码、PKCE 和刷新由已有 IdP 负责，本项目不签发登录凭据。
