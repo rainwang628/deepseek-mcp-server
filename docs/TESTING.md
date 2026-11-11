@@ -43,7 +43,33 @@ CLI Smoke 验证存活、工具发现、health_check 和 dry-run；完整 Mock �
 如本机仍有冲突，可同时覆盖 `PORT` 与 `PUBLIC_URL`，两者保持一致；Smoke 使用相同覆盖值。
 
 Docker 镜像、Compose、Caddy/TLS、云主机、真实 IdP 和用户 ChatGPT/Plus/iOS 端到端均未验收。
-没有创建收费资源，没有调用 DeepSeek models/balance 或推理接口；模型 ID 以官方文档确认。
+没有创建收费资源。上述自动测试未调用真实 DeepSeek；后续一次单独获准的真实调用记录如下。
+
+## 一次真实 DeepSeek 调用验收
+
+用户明确批准合并 PR #1，并进行**一次最多 $0.005** 的真实推理，随后在本项目 `.env` 中提供 Key。
+北京时间 **2026-11-11 15:47:27–15:47:28**，使用合并提交 `fed24cf95d5d554e3e2240fffa3a086337c5ad29` 完成：
+
+| 项目 | 实测结果 |
+| --- | --- |
+| 路径 | 标准 MCP 客户端 → 本地回环 `/mcp` → 官方 DeepSeek HTTPS API → MCP 工具结果 |
+| 模型确认 | 先调用官方 `GET /models`，确认存在 `deepseek-v4-pro`，再进行 dry-run |
+| 工具发现 | `health_check`、`ask_deepseek` 两个工具 |
+| 测试任务 | 非敏感固定文本 `Reply with exactly MCP_OK.`；未发送历史聊天或其他连接数据 |
+| 请求数与输出上限 | **1 次真实推理、0 次重试**；`max_tokens=128`，关闭 thinking，不启用其他工具 |
+| 授权/账本预算 | 单次、当日、累计均限制为 $0.005，使用独立持久账本和 UUID 防重复 |
+| 发请求前预留估算 | $0.00074976 |
+| 实际响应 | `MCP_OK`，`finish_reason=stop`，未截断 |
+| API 报告用量 | 输入 11、输出 3、缓存命中 0 Token |
+| 用量费用估算 | **$0.0000264**，按已核验高峰单价计算，低于预留与授权上限 |
+| 账本结果 | 当日调用数 1；未结算预留 0；未触发 safety halt |
+| 测试后状态 | 本地测试进程已退出；`.env` 仍为 mock、分流 false、付费 false |
+
+Key、原始本地结果、UUID 防重记录和 SQLite 均留在忽略提交的本地文件中；文档不保存凭据。
+原始结果为 `.runtime/live-validation-result.json`，账本为 `data/live-validation.sqlite`。
+记录会阻止同一授权的再次派发；本次一次性授权已经使用，不能据此继续调用。
+价格来源见 [COSTS.md](COSTS.md)，金额是根据 API 返回用量计算的估算，**供应商实际账单与余额未核验**。
+本次没有公网部署，未测试真实 OAuth 登录，也不能据此声称用户 Plus 网页版或 iOS 已接通。
 
 ## 正式测试所需条件
 

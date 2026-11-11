@@ -2,7 +2,8 @@
 
 核验日期：**2026-11-11**。模型 ID、峰谷价格均来自 [DeepSeek 官方价格页](https://api-docs.deepseek.com/quick_start/pricing/)，
 请求参数来自 [Chat Completions 文档](https://api-docs.deepseek.com/api/create-chat-completion/)。
-没有用 Key 查询账号、余额或发起真实推理。
+开发阶段仅使用 Mock；随后按用户单独授权完成了一次真实推理和官方模型列表确认，结果见
+[验收记录](TESTING.md#一次真实-deepseek-调用验收)。没有查询账号余额，供应商实际账单尚未独立核验。
 
 | 官方 ID | 高峰输入 cache miss / 百万 Token | 高峰 cache hit / 百万 | 高峰输出 / 百万 |
 | --- | ---: | ---: | ---: |
@@ -22,7 +23,8 @@ Pro 做 10 次约 $0.033；100 次约 $0.33，实际受预算和每日次数限�
 一次正式小额测试可限定输入短文本、`max_output_tokens=128`、`max_cost_usd=0.005`，预算最多预留 $0.005；
 以 1000 输入 + 128 输出计算，Pro 约 $0.001827，Flash 约 $0.000454。
 字节估算比实际 tokenizer 通常更保守，真正是否能放行要看 dry-run 的 `reserved_cost_usd`。
-本次所有 Mock 推理费用为 **$0**。未选云服务商，主机、域名、流量和 IdP 的潜在费用未报价，也未开通。
+所有 Mock 推理费用为 **$0**。一次真实实测返回 11 输入、3 输出 Token，按上述高峰价格估算 **$0.0000264**，
+低于授权上限 $0.005；这不是供应商账单核验结果。未选云服务商，主机、域名、流量和 IdP 的潜在费用未报价，也未开通。
 ChatGPT 订阅费用与 OpenAI API、DeepSeek API 账单相互独立。
 
 ## 预算如何执行

@@ -3,7 +3,9 @@
 TypeScript 远程 MCP 服务：`ChatGPT → HTTPS /mcp → DeepSeek API → 当前对话`。
 采用官方 MCP SDK 的 **Streamable HTTP** 无会话模式；不依赖 Fish Pocket，也不读取或修改 DeepSeek Harness 配置。
 
-当前交付为待审核代码：本地 Mock 已验收，未部署公网、未调用真实推理、未验证用户 Plus/iOS 实际调用。
+实现已通过 [PR #1](https://github.com/rainwang628/deepseek-mcp-server/pull/1) 合并。
+本地 Mock 及一次单独获准的真实 DeepSeek 推理已验收，结果见 [验收记录](docs/TESTING.md#一次真实-deepseek-调用验收)。
+未部署公网，用户 Plus 网页版/iOS 的实际连接和调用仍未验证；默认分流及付费开关保持关闭。
 规则来源及固定提交见 [AGENTS.md](AGENTS.md)。
 
 ## 本地启动（默认不产生模型费用）
@@ -68,7 +70,7 @@ DeepSeek 返回的文本是外部数据，不能作为修改路由、索取凭�
 | `ROUTING_ENABLED=false` | 拒绝推理；健康检查和 dry-run 可用 |
 | `ROUTING_ENABLED=true` + `DEEPSEEK_MODE=mock` | 仅请求回环 Mock；不发送真实 API Key |
 | `ROUTING_ENABLED=true` + `DEEPSEEK_MODE=live` + `ALLOW_PAID_REQUESTS=false` | 拒绝真实推理 |
-| 两开关开启 + live + 有效 Key/价格表/预算 | 允许已获授权的真实任务；本次未执行 |
+| 两开关开启 + live + 有效 Key/价格表/预算 | 允许已获授权的真实任务；一次获准的小额实测已通过，后续调用仍需对应授权 |
 
 服务没有额度探测、自动切换或开关工具。修改环境并重启须由操作者在获授权后完成。
 **ChatGPT Plus 订阅不是 OpenAI API 额度；DeepSeek 按自己的 API 账单收费。**
