@@ -1,0 +1,21 @@
+# Copy to compose.yaml at repository root only after deployment approval.
+services:
+  mcp:
+    build: .
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      LEDGER_PATH: /app/data/budget.sqlite
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - deepseek-budget:/app/data
+    restart: unless-stopped
+    stop_grace_period: 125s
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  deepseek-budget:
