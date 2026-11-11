@@ -1,0 +1,9 @@
+# Template only; replace with the domain approved for deployment.
+# No access/body/header logging is enabled here.
+mcp.example.com {
+    reverse_proxy 127.0.0.1:3000 {
+        transport http {
+            response_header_timeout 130s
+        }
+    }
+}

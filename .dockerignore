@@ -1,0 +1,13 @@
+.git
+.runtime
+.env
+.env.*
+node_modules
+dist
+data
+logs
+coverage
+*.log
+*.pem
+*.key
+.DS_Store
