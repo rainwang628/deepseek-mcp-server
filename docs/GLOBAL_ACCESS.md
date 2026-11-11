@@ -80,6 +80,11 @@ dry-run 返回输入估算 173、最大输出 128、费用估算 $0.00073524；�
 不会因为暂时未 ready 而反复重启。登录时网络或钥匙串尚未就绪导致启动失败，会在后续检查时重试。
 变更操作使用 macOS `lockf` 串行化，避免自动检查与手动启动/停止并发。
 
+macOS 的「系统设置 → 通用 → 登录项与扩展 → 后台 App 活动」也必须允许该任务。
+本机留存的官方 Bun 运行器在该列表按签名开发者显示为 **Jarred Sumner**；应先核对关联的是
+本项目的 `com.rain.deepseek-tunnel`，再开启对应项。后台活动关闭时，plist 仍可存在，
+但系统会卸载任务；`launchctl enable` 及安装时短暂显示已加载，不能代替这项后台运行授权。
+
 `./stop-tunnel.command` 同时创建 `.private/tunnel-autostart-paused`，保持手动停止；
 `./start-tunnel.command` 清除暂停标记并恢复启动。移除自启用
 `.runtime/bun/bun macos/autostart.mjs uninstall`，已运行的隧道仍可用停止命令关闭。
