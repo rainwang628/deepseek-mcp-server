@@ -15,7 +15,9 @@ test('unsafe or ambiguous environment configuration fails closed without exposin
     { PUBLIC_URL: 'https://mcp.example.com/mcp' },
     { MOCK_DEEPSEEK_URL: 'https://api.deepseek.com' }, { MOCK_DEEPSEEK_URL: 'http://localhost:4010' },
     { MOCK_DEEPSEEK_URL: 'http://127.0.0.1:4010?key=test-value' }, { MAX_OUTPUT_TOKENS: '1' },
-    { DAILY_BUDGET_USD: '-1' }, { OAUTH_ISSUER: 'https://issuer.example', AUTH_MODE: 'oauth' },
+    { DAILY_BUDGET_USD: '-1' }, { CHATGPT_IOS_USER_VERIFIED_ON: 'guessed' },
+    { CHATGPT_WEB_TOOLS_VERIFIED_ON: '2026-02-31' },
+    { OAUTH_ISSUER: 'https://issuer.example', AUTH_MODE: 'oauth' },
     { DEEPSEEK_MODE: 'live', LEDGER_PATH: ':memory:' }, { DEEPSEEK_API_KEY: 'test-control\ncharacter' },
   ]) assert.throws(() => config(env));
   assert.throws(() => loadConfig({ DEEPSEEK_MODEL: 'test-sensitive-invalid-value' }), e =>

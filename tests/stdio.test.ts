@@ -33,6 +33,7 @@ test('global stdio starts from another directory and discovers tools without lea
   assert.match(child.client.getInstructions()!, /routing_enabled=false/);
   const health = data(await child.client.callTool({ name: 'health_check', arguments: {} }));
   assert.equal(health.routing_enabled, false);
+  assert.equal(health.transport, 'stdio');
   const estimate = data(await child.client.callTool({ name: 'ask_deepseek', arguments: {
     request_id: randomUUID(), prompt: 'Local stdio dry run', dry_run: true,
   } }));

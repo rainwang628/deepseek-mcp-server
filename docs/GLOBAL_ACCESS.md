@@ -40,7 +40,8 @@ HTTP 接口原有的 Bearer/OAuth 认证要求不变。
 实际调用了 health_check 和 `dry_run=true` 的 ask_deepseek，返回当前 live 配置、模型和共享预算。
 dry-run 返回输入估算 173、最大输出 128、费用估算 $0.00073524；账本仍为调用数 1、金额 $0.00020724、未结算预留 0。
 因此本次安装与网页验收没有新增 DeepSeek 推理费用。
-网页真实推理和 iPhone 实际调用尚未进行；之前真实 DeepSeek 推理成功的记录来自本地标准 MCP 客户端。
+上述安装验收没有测试网页真实推理。用户随后于 2026-11-11 明确反馈 iPhone 实时 DeepSeek 调用已成功；
+此移动端结论来自用户实测，开发者未独立观察手机屏幕。网页真实推理仍未由开发者单独实测。
 
 本机隧道客户端和 Bun 从已留存的官方安装包独立提取到本项目 `.runtime/`，提取前校验原安装包 SHA-256。
 来源和校验记录保存在本机 `.runtime/verified-runtimes.json`，原安装包仍留在 `~/rain/softs/`。
@@ -65,7 +66,10 @@ dry-run 返回输入估算 173、最大输出 128、费用估算 $0.00073524；�
 
 插件创建并安装到本人 ChatGPT 账号后，在其他对话选择“DeepSeek 助手”；已有会话刷新工具目录。
 工具应只有 `health_check` 与 `ask_deepseek`。首次核对状态和 dry-run，不发送私有历史或凭据。
-手机需在同一账号和工作区实际调用，结果未观察前保留“未验证”状态。
+手机需在同一账号和工作区实际调用；本机已按用户反馈登记 `CHATGPT_IOS_USER_VERIFIED_ON=2026-11-11`。
+health_check 显示 `chatgpt_ios=user_confirmed`，并给出日期、`source=user_report`，不会把健康检查当作设备实测。
+本机也登记 `CHATGPT_WEB_TOOLS_VERIFIED_ON=2026-11-11`：`chatgpt_plus=web_tools_verified_only` 明确表示
+网页 health_check/dry-run 已由运营者验证，网页真实推理仍未单独验收，不再把整个网页调用能力笼统标为未验证。
 
 ## 分流范围与费用
 
@@ -74,10 +78,28 @@ dry-run 返回输入估算 173、最大输出 128、费用估算 $0.00073524；�
 服务初始化会报告当前路由、付费授权和共享费用上限，不能根据猜测的 Plus 额度自行开启。
 宿主的工具批准规则继续适用；MCP 不会恢复或绕过宿主额度。
 
-本机已明确启用 live，模型 `deepseek-v4-pro`，上限为单次 $0.02、UTC 每日 $0.10、累计 $1。
+本机已明确启用 live，模型 `deepseek-v4-pro`。用户于 2026-11-11 调整上限为单次 $0.02、UTC 每日 $1、累计 $50，
+每日调用上限相应为 200 次。UTC 日于北京时间 08:00 换日；累计包含原账本已有费用，不因本次调额重新开始。
 所有入口共享限额和 UUID 防重复；金额为应用侧估算保护，局限见 [COSTS.md](COSTS.md)。
 关闭时在 `.env` 设 `ROUTING_ENABLED=false`、`ALLOW_PAID_REQUESTS=false`，重启/刷新所有使用中的 MCP 进程并回读 health_check。
 不要删除账本或新建不同文件绕过限制。
+
+## 回答来源提示
+
+宿主在实际委托前应先显示 **【正在转交 DeepSeek】**；有 `mode=live` 的成功回答后显示
+**【DeepSeek 返回｜请求模型 deepseek-v4-pro】**。若 GPT 重新组织、改写或补充，标为
+**【GPT 整理｜基于 DeepSeek 输出】**；完全由当前主模型完成时标为 **【当前 GPT 处理】**。
+混合回答分别标注对应段落，不把一次工具调用描述成整个会话已切换模型。
+
+服务在 MCP `content` 开头写入来源标签，并在 `structuredContent.display_label`、`provenance` 给出服务器计算的来源。
+`provenance.kind=model_output`、`provider=deepseek` 仅用于实际 live 成功结果；
+Mock 标为“Mock 返回｜未调用 DeepSeek”，dry-run 标为“费用估算｜未调用 DeepSeek”，错误标为未取得回答。
+超时等错误可能已经派发，不能据失败标签推断没有产生费用。来源字段不接受 prompt 或上游文本指定。
+
+工具描述和初始化 instructions 都要求宿主保留标签。另按 [OpenAI 官方元数据说明](https://developers.openai.com/plugins/reference#_meta-fields-on-tool-descriptor)
+声明运行中/结束提示；结束提示只表示工具处理结束，具体是否有模型输出以来源字段为准。
+ChatGPT 网页、iOS 和 Codex 是否展示状态文本由客户端决定；服务不能更改原生模型选择器，
+也无法强制所有宿主在最终回答中遵循文字提示。旧会话可能需要刷新工具目录或重新选择插件。
 
 ## 官方依据
 

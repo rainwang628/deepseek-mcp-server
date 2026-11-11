@@ -5,7 +5,8 @@
 
 本机当前采用已连接的账号级 [DeepSeek 助手](https://chatgpt.com/plugins/plugin_asdk_app_6af4292e29948191917b0a1ea39019af)，
 通过独立私有 Tunnel 访问 stdio；网页 health_check 和 dry-run 已实测。其他对话选择该插件后使用，
-已有窗口可能需要刷新工具目录，详见 [全局接入记录](GLOBAL_ACCESS.md)。下节公网 HTTPS/OAuth 是另一种待部署方式。
+已有窗口可能需要刷新工具目录；用户已于 2026-11-11 确认 iPhone 实时 DeepSeek 调用成功。
+详见 [全局接入记录及来源提示](GLOBAL_ACCESS.md)。下节公网 HTTPS/OAuth 是另一种待部署方式。
 
 ## 网页版连接（正式部署获准之后）
 
@@ -14,7 +15,7 @@
 2. 在网页版进入 **ChatGPT Plugins**，点击加号 → **Add custom MCP server**。
    官方当前文档使用这个入口；若账号界面不同，按实际 Apps/开发者入口核对，不能把桌面 Codex 配置视为网页版已连接。
 3. 名称填 DeepSeek MCP；Server URL 填 `https://你的域名/mcp`，连接方式使用远程 URL。
-   本地 `127.0.0.1` 地址不能直接被 ChatGPT 云端访问。本次不使用隧道、也不创建公网入口。
+   本地 `127.0.0.1` 地址不能直接被 ChatGPT 云端访问；此节描述公网 URL 接入，现有私有隧道步骤见上方全局接入文档。
 4. 认证选 **OAuth**，按已注册的 IdP 选择静态 OAuth client 或其支持的 CIMD/DCR，
    在管理页复制真实 redirect URI 到 IdP allowlist，完成 owner 登录与授权。
    不要选 No authentication，也不要把 DeepSeek Key 填到 OAuth client secret 或对话中。
@@ -39,9 +40,9 @@
 | HTTPS 公网可达、真实 TLS | 未部署/未验证 | 用户确认的目标环境和域名 |
 | 真实 IdP 登录、授权码、PKCE、刷新 | 未验证 | 已配 IdP、owner 账号与匹配回调 |
 | 用户 Plus 网页版添加/连接及工具调用 | **已验证** | 独立私有 Tunnel；health_check 和 dry-run 成功，网页真实推理未测 |
-| 用户 iOS ChatGPT 发现/启用/调用该服务 | **未验证** | 实际 iOS 版本、相同账号/工作区和一次端到端调用 |
+| 用户 iOS ChatGPT 实时调用该服务 | **用户实测确认** | 2026-11-11 用户反馈成功；开发者未独立观察手机屏幕，非 health_check 自动检测 |
 | Plus 剩余额度百分比 | **没有读取能力** | 可靠官方接口及授权；本项目没有此接口 |
-| 真实 DeepSeek Key、官方模型列表和一次推理 | **本地 MCP 已通过** | 2026-11-11，`deepseek-v4-pro` 返回 `MCP_OK`；后续请求需新授权 |
+| 真实 DeepSeek Key、官方模型列表和一次推理 | **本地 MCP 已通过** | 2026-11-11，`deepseek-v4-pro` 返回 `MCP_OK`；后续运行按用户另行开启的共享限额执行 |
 | DeepSeek 实际账单和账号余额 | 未独立核验/未查询 | 由供应商控制台或正式用量记录核对，不以估算替代账单 |
 
 官方列出的协议/连接方式不能证明某个订阅、设备或工作区已获准使用。

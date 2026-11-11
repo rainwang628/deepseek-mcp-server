@@ -29,9 +29,19 @@ export class DeepSeekService {
       model: c.DEEPSEEK_MODEL, api_key_configured: c.DEEPSEEK_API_KEY.length > 0,
       pricing_verified_on: PRICING_VERIFIED_ON, pricing_current: pricingIsCurrent(), rules_ref: RULES_REF,
       limits: { max_input_bytes: c.MAX_INPUT_BYTES, max_total_tokens_estimate: c.MAX_TOTAL_TOKENS,
-        max_output_tokens: c.MAX_OUTPUT_TOKENS, max_cost_per_request_usd: c.MAX_COST_PER_REQUEST_USD },
+        max_output_tokens: c.MAX_OUTPUT_TOKENS, max_cost_per_request_usd: c.MAX_COST_PER_REQUEST_USD,
+        max_calls_per_day: c.MAX_CALLS_PER_DAY },
       budget: this.ledger.summary(c), upstream_checked: false,
-      client_validation: { chatgpt_plus: 'unverified', chatgpt_ios: 'unverified' } };
+      client_validation: { chatgpt_plus: c.CHATGPT_WEB_TOOLS_VERIFIED_ON ? 'web_tools_verified_only' : 'unverified',
+        chatgpt_plus_evidence: c.CHATGPT_WEB_TOOLS_VERIFIED_ON ? {
+          date: c.CHATGPT_WEB_TOOLS_VERIFIED_ON, source: 'operator_record', scope: 'web_health_check_and_dry_run',
+          web_live_inference_independently_verified: false, independently_verified_by_health_check: false,
+        } : null,
+        chatgpt_ios: c.CHATGPT_IOS_USER_VERIFIED_ON ? 'user_confirmed' : 'unverified',
+        chatgpt_ios_evidence: c.CHATGPT_IOS_USER_VERIFIED_ON ? {
+          date: c.CHATGPT_IOS_USER_VERIFIED_ON, source: 'user_report',
+          scope: 'real_time_deepseek_call', independently_verified_by_health_check: false,
+        } : null } };
   }
   async ask(raw: unknown, signal?: AbortSignal) {
     const start = performance.now();
