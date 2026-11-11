@@ -17,8 +17,17 @@ test('standard MCP initializes, discovers schemas, health and dry-run make zero 
   assert.equal(health.routing_enabled, false);
   assert.equal(health.paid_requests_allowed, false);
   assert.equal(health.upstream_checked, false);
-  const estimate = data(await client.callTool({ name: 'ask_deepseek', arguments: { ...args(), dry_run: true } }));
+  assert.equal(health.client_validation.chatgpt_ios, 'unverified');
+  assert.equal(health.client_validation.chatgpt_plus, 'unverified');
+  assert.equal(health.budget.daily_budget_usd, 1);
+  assert.equal(health.budget.total_budget_usd, 50);
+  assert.equal(health.limits.max_calls_per_day, 200);
+  const rawEstimate = await client.callTool({ name: 'ask_deepseek', arguments: { ...args(), dry_run: true } });
+  const estimate = data(rawEstimate);
   assert.equal(estimate.dry_run, true);
+  assert.equal(estimate.provenance.kind, 'cost_estimate');
+  assert.equal(estimate.provenance.inference_status, 'not_requested');
+  assert.match(JSON.stringify(rawEstimate.content), /费用估算｜未调用 DeepSeek/);
   assert.ok(estimate.estimate.reserved_cost_usd > 0);
   assert.equal(f.application.ledger.summary(f.c).calls_today, 0);
   assert.equal(f.mock.state.calls, 0);
@@ -27,6 +36,8 @@ test('routing is blocked by default; tool cannot enable routing or supply an API
   const f = await fixture(); t.after(() => f.close()); const client = await f.client();
   const r = await client.callTool({ name: 'ask_deepseek', arguments: args() });
   assert.equal(r.isError, true); assert.equal(data(r).error.code, 'ROUTING_DISABLED');
+  assert.equal(data(r).provenance.kind, 'error');
+  assert.equal(data(r).provenance.provider, null);
   for (const extra of [{ routing_enabled: true }, { api_key: 'must-not-be-accepted' }, { dry_run: 'false' }]) {
     const invalid = await client.callTool({ name: 'ask_deepseek', arguments: { ...args(), ...extra } });
     assert.equal(invalid.isError, true);
@@ -49,6 +60,9 @@ test('mock completion returns answer, usage, cost and durable budget; no real ke
   const r = await client.callTool({ name: 'ask_deepseek', arguments: { ...input, max_output_tokens: 32 } });
   assert.equal(r.isError, undefined); const output = data(r);
   assert.equal(output.answer, MOCK_ANSWER); assert.equal(output.mode, 'mock'); assert.equal(output.cost.mock_only, true);
+  assert.equal(output.provenance.kind, 'mock_output');
+  assert.equal(output.provenance.provider, 'mock');
+  assert.match(output.display_label, /Mock 返回｜未调用 DeepSeek/);
   assert.deepEqual(output.usage, { input_tokens: 8, output_tokens: 6, cached_input_tokens: 0 });
   assert.equal(output.budget.calls_today, 1); assert.equal(output.budget.unresolved_reservations, 0);
   assert.equal(f.mock.state.authorization, undefined);

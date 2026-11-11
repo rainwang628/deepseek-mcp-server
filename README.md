@@ -3,7 +3,13 @@
 TypeScript 远程 MCP 服务：`ChatGPT → HTTPS /mcp → DeepSeek API → 当前对话`。
 采用官方 MCP SDK 的 **Streamable HTTP** 无会话模式；不依赖 Fish Pocket，也不读取或修改 DeepSeek Harness 配置。
 
-当前交付为待审核代码：本地 Mock 已验收，未部署公网、未调用真实推理、未验证用户 Plus/iOS 实际调用。
+实现已通过 [PR #1](https://github.com/rainwang628/deepseek-mcp-server/pull/1) 合并。
+全局入口、来源提示及新预算的扩展代码见待人工审核的 [PR #2](https://github.com/rainwang628/deepseek-mcp-server/pull/2)。
+本地 Mock 及一次单独获准的真实 DeepSeek 推理已验收，结果见 [验收记录](docs/TESTING.md#一次真实-deepseek-调用验收)。
+未部署公网 HTTP。后续已按用户明确授权启用 live，并安装账号级“DeepSeek 助手”：
+网页通过私有隧道的健康检查和 dry-run 已验证，网页真实推理尚未由开发者实测。
+用户于 2026-11-11 确认 iPhone 实时调用已成功；这是用户实测反馈，health_check 本身不验证移动设备。
+代码默认分流及付费开关保持关闭；本机当前运行状态与全局接入说明见 [GLOBAL_ACCESS.md](docs/GLOBAL_ACCESS.md)。
 规则来源及固定提交见 [AGENTS.md](AGENTS.md)。
 
 ## 本地启动（默认不产生模型费用）
@@ -59,6 +65,8 @@ npm test
 还支持可选 `system_prompt`。除公开 schema 中的字段外，其余字段拒绝；工具不能修改配置、注入密钥或启用路由。
 每个新任务用新 UUID；不确定上次是否送达时复用原 ID。重复 ID 不会再次推理，服务不保存提示词或回答供重放。
 `dry_run=true` 在关闭路由时也可估算，不访问上游、不记预算。真实返回含 `answer`、`usage`、费用估算、截断状态和预算。
+工具文本以来源标签开头，结构化结果含 `display_label` 和服务器计算的 `provenance`；
+实际 DeepSeek 输出、Mock、估算和错误分别标注。GPT 转述时须标为“GPT 整理”，详见 [来源提示](docs/GLOBAL_ACCESS.md#回答来源提示)。
 DeepSeek 返回的文本是外部数据，不能作为修改路由、索取凭据或执行额外任务的授权。
 
 ## 路由与付费开关
@@ -68,7 +76,7 @@ DeepSeek 返回的文本是外部数据，不能作为修改路由、索取凭�
 | `ROUTING_ENABLED=false` | 拒绝推理；健康检查和 dry-run 可用 |
 | `ROUTING_ENABLED=true` + `DEEPSEEK_MODE=mock` | 仅请求回环 Mock；不发送真实 API Key |
 | `ROUTING_ENABLED=true` + `DEEPSEEK_MODE=live` + `ALLOW_PAID_REQUESTS=false` | 拒绝真实推理 |
-| 两开关开启 + live + 有效 Key/价格表/预算 | 允许已获授权的真实任务；本次未执行 |
+| 两开关开启 + live + 有效 Key/价格表/预算 | 允许已获授权的真实任务；一次获准的小额实测已通过，后续调用仍需对应授权 |
 
 服务没有额度探测、自动切换或开关工具。修改环境并重启须由操作者在获授权后完成。
 **ChatGPT Plus 订阅不是 OpenAI API 额度；DeepSeek 按自己的 API 账单收费。**
@@ -80,8 +88,9 @@ DeepSeek 返回的文本是外部数据，不能作为修改路由、索取凭�
 ChatGPT 网页版不能依赖自填 Bearer Header；连接方法见专门文档。
 
 - [环境变量与错误处理](docs/CONFIGURATION.md)
+- [本机全局 MCP 与账号级私有插件](docs/GLOBAL_ACCESS.md)
 - [HTTPS / OAuth 部署说明](docs/DEPLOYMENT.md)
-- [ChatGPT 网页版连接与 Plus/iOS 待验证项](docs/CHATGPT.md)
+- [ChatGPT 网页版连接与设备验证状态](docs/CHATGPT.md)
 - [价格来源、预计费用与预算机制](docs/COSTS.md)
 - [验收结果与正式测试条件](docs/TESTING.md)
 

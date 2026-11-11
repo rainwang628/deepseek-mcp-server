@@ -1,6 +1,7 @@
 # HTTPS / OAuth 部署说明（尚未执行）
 
-本次只交付模板，**没有购买主机、开通收费服务或把服务暴露到公网**。
+公网 HTTPS/OAuth 路径只交付模板，**没有购买主机、开通收费服务或把本地接口暴露到公网**。
+本机另已按用户授权建立独立私有 Tunnel 和账号级插件，实际状态见 [GLOBAL_ACCESS.md](GLOBAL_ACCESS.md)。
 先人工审核 PR，再由用户确认目标主机、域名、IdP 和费用后执行本节。
 
 建议单主机 Node.js 24 + 本地持久 SQLite + Caddy TLS 终止。外部 URL 为 `https://mcp.example.com/mcp`，
@@ -80,7 +81,8 @@ Compose 在容器内绑定 `0.0.0.0`，宿主仅映射 `127.0.0.1:3000`，因此
 后续需用户单独同意付费测试及限额，再设置 `DEEPSEEK_MODE=live`、有效 Key、
 `ROUTING_ENABLED=true` 和 `ALLOW_PAID_REQUESTS=true`，核对价格表日期及预算，重启并回读 health_check。
 正式测试完成后恢复两开关关闭并回读。不要修改现有 Mac/iPhone/DSH/Fish Pocket 的模型配置。
-`health_check` 不验证 Key/余额，首次真实推理是否成功仍需经过获准测试。
+`health_check` 不验证 Key/余额；一次本地 MCP 的真实推理已通过，见 [验收记录](TESTING.md#一次真实-deepseek-调用验收)。
+此结果不代替部署后在目标环境的验收，新的真实请求仍需对应授权。
 
 回退：先关闭路由并重启，确认 health_check；切换到已审核的旧代码镜像，保留同一个账本/持久卷。
 JWT/JWKS 轮换由 IdP 管理；Key 泄露时由用户在 DeepSeek 控制台撤销并用安全渠道更新环境，不能把 Key 贴入 issue 或日志。
