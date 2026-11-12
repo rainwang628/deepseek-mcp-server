@@ -14,6 +14,7 @@ export function createMcpServer(service: DeepSeekService, options: { privateStdi
   const server = new McpServer({ name: 'deepseek-mcp-server', version: '0.1.0' }, {
     instructions: [
       '分工：GPT 制定框架、验收标准并审核；适合的主体工作优先交给 DS。宿主执行文件、浏览器及其他工具操作，并检查实际结果。',
+      '审核与返工：宿主对照用户目标检查 DS 结果及其事实依据；不达标时明确问题和修改要求，视情况让 DS 修订或由宿主接手，并按需说明实质修改和实际处理者。不得虚构审核、验证、差异或成品；服务无法看到宿主最终成果，也不会自动验收。',
       '本 MCP 仅收发文字，不直接接收图片、原生生图、执行代码或输出文件；DS 可提供 PPT 内容和制作代码，由宿主生成并验收。无法生图时直接用宿主可用的生图能力；PPT 遵循已有确认流程，用户明确跳过除外。',
       '状态与来源：真实委托前显示【DS 处理中】，返回后保留服务的 display_label；需要时显示【GPT 审核中】或【GPT 处理中】，阶段不变时不重复刷屏。基于 DS 输出且经 GPT 审核的内容可标【DS 起草｜GPT 审核】；混合内容按实际来源成段区分。估算、Mock 和失败不等于 DS 已回答。',
       '已知当前为 iOS 且无法获取任何 Codex 账号共享额度时，不输出空的 Codex 额度表，只写“当前 iOS 环境无法获取 Codex 账号共享额度。”；不要仅因读取失败猜测设备为 iOS，也不要通过 Mac 或缓存补取。',
