@@ -13,10 +13,17 @@ test('standard MCP initializes, discovers schemas, health and dry-run make zero 
   assert.deepEqual(tools.map(x => x.name), ['health_check', 'ask_deepseek']);
   assert.equal(tools[1]!.annotations?.readOnlyHint, false);
   assert.equal(tools[1]!.inputSchema.additionalProperties, false);
+  assert.equal(tools[1]!._meta?.['openai/toolInvocation/invoking'], 'DS 工具处理中');
+  assert.equal(tools[1]!._meta?.['openai/toolInvocation/invoked'], 'DS 工具处理结束');
+  assert.match(tools[1]!.description ?? '', /cannot accept images, generate image or PPT files, or execute code/);
+  assert.match(client.getInstructions() ?? '', /当前 iOS 环境无法获取 Codex 账号共享额度/);
+  assert.match(client.getInstructions() ?? '', /不要仅因读取失败猜测设备为 iOS/);
   const health = data(await client.callTool({ name: 'health_check', arguments: {} }));
   assert.equal(health.routing_enabled, false);
   assert.equal(health.paid_requests_allowed, false);
   assert.equal(health.upstream_checked, false);
+  assert.deepEqual(health.capabilities, { text_input: true, text_output: true, image_input: false,
+    native_image_output: false, direct_file_output: false, presentation_support: 'text_or_source_code_only' });
   assert.equal(health.client_validation.chatgpt_ios, 'unverified');
   assert.equal(health.client_validation.chatgpt_plus, 'unverified');
   assert.equal(health.budget.daily_budget_usd, 1);
@@ -38,7 +45,8 @@ test('routing is blocked by default; tool cannot enable routing or supply an API
   assert.equal(r.isError, true); assert.equal(data(r).error.code, 'ROUTING_DISABLED');
   assert.equal(data(r).provenance.kind, 'error');
   assert.equal(data(r).provenance.provider, null);
-  for (const extra of [{ routing_enabled: true }, { api_key: 'must-not-be-accepted' }, { dry_run: 'false' }]) {
+  for (const extra of [{ routing_enabled: true }, { api_key: 'must-not-be-accepted' }, { dry_run: 'false' },
+    { image_url: 'test-image-must-not-be-accepted' }]) {
     const invalid = await client.callTool({ name: 'ask_deepseek', arguments: { ...args(), ...extra } });
     assert.equal(invalid.isError, true);
   }

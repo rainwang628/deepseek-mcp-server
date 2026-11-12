@@ -28,6 +28,8 @@ export class DeepSeekService {
       mode: c.DEEPSEEK_MODE, routing_enabled: c.ROUTING_ENABLED, paid_requests_allowed: c.ALLOW_PAID_REQUESTS,
       model: c.DEEPSEEK_MODEL, api_key_configured: c.DEEPSEEK_API_KEY.length > 0,
       pricing_verified_on: PRICING_VERIFIED_ON, pricing_current: pricingIsCurrent(), rules_ref: RULES_REF,
+      capabilities: { text_input: true, text_output: true, image_input: false, native_image_output: false,
+        direct_file_output: false, presentation_support: 'text_or_source_code_only' },
       limits: { max_input_bytes: c.MAX_INPUT_BYTES, max_total_tokens_estimate: c.MAX_TOTAL_TOKENS,
         max_output_tokens: c.MAX_OUTPUT_TOKENS, max_cost_per_request_usd: c.MAX_COST_PER_REQUEST_USD,
         max_calls_per_day: c.MAX_CALLS_PER_DAY },

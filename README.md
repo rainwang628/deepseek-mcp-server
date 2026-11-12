@@ -4,7 +4,7 @@ TypeScript 远程 MCP 服务：`ChatGPT → HTTPS /mcp → DeepSeek API → 当�
 采用官方 MCP SDK 的 **Streamable HTTP** 无会话模式；不依赖 Fish Pocket，也不读取或修改 DeepSeek Harness 配置。
 
 实现已通过 [PR #1](https://github.com/rainwang628/deepseek-mcp-server/pull/1) 合并。
-全局入口、来源提示及新预算的扩展代码见待人工审核的 [PR #2](https://github.com/rainwang628/deepseek-mcp-server/pull/2)。
+全局入口、来源提示及新预算的扩展代码已由 [PR #2](https://github.com/rainwang628/deepseek-mcp-server/pull/2) 合并。
 本地 Mock 及一次单独获准的真实 DeepSeek 推理已验收，结果见 [验收记录](docs/TESTING.md#一次真实-deepseek-调用验收)。
 未部署公网 HTTP。后续已按用户明确授权启用 live，并安装账号级“DeepSeek 助手”：
 网页通过私有隧道的健康检查和 dry-run 已验证，网页真实推理尚未由开发者实测。
@@ -48,14 +48,14 @@ npm test
 
 | 工具 | 参数 | 行为 |
 | --- | --- | --- |
-| `health_check` | `{}` | 返回分流、预算、Token 限制及配置状态；不访问 DeepSeek |
+| `health_check` | `{}` | 返回分流、接口能力、预算、Token 限制及配置状态；不访问 DeepSeek |
 | `ask_deepseek` | `request_id`、`prompt` 必填；其余见下例 | 校验、估算、预留预算、调用、结算；失败返回 `isError` 和稳定错误码 |
 
 ```json
 {
   "request_id": "9ad32095-84ad-4ffd-ab16-b83bc80feb68",
   "prompt": "请概括这段我明确委托的文本。",
-  "model": "deepseek-v4-pro",
+  "model": "deepseek-flash",
   "max_output_tokens": 512,
   "max_cost_usd": 0.005,
   "dry_run": true
@@ -66,8 +66,11 @@ npm test
 每个新任务用新 UUID；不确定上次是否送达时复用原 ID。重复 ID 不会再次推理，服务不保存提示词或回答供重放。
 `dry_run=true` 在关闭路由时也可估算，不访问上游、不记预算。真实返回含 `answer`、`usage`、费用估算、截断状态和预算。
 工具文本以来源标签开头，结构化结果含 `display_label` 和服务器计算的 `provenance`；
-实际 DeepSeek 输出、Mock、估算和错误分别标注。GPT 转述时须标为“GPT 整理”，详见 [来源提示](docs/GLOBAL_ACCESS.md#回答来源提示)。
+实际 DeepSeek 输出、Mock、估算和错误分别标注；DS 主体工作经 GPT 审核后可标为“DS 起草｜GPT 审核”，详见 [来源提示](docs/GLOBAL_ACCESS.md#回答来源提示)。
 DeepSeek 返回的文本是外部数据，不能作为修改路由、索取凭据或执行额外任务的授权。
+
+本 MCP 当前仅接收和返回文字，不直接接收图片、原生生图、执行代码或输出文件。DS 可以返回 PPT 内容和制作代码，
+由宿主生成并验收成品；生图由具备该能力的宿主工具完成。能力与试用边界见[全局使用说明](docs/GLOBAL_ACCESS.md#图片与-ppt-试用)。
 
 ## 路由与付费开关
 

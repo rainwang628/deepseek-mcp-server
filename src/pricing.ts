@@ -18,4 +18,4 @@ export function costNanos(model: ModelId, input: number, output: number, cached 
   return (input - cached) * Math.round(price.input * 1000)
     + cached * Math.round(price.cachedInput * 1000) + output * Math.round(price.output * 1000);
 }
-export const RULES_REF = '30ea62b66424a01965513ede06281c6cfc65a874';
+export const RULES_REF = '05d9ace5f5aa41a13a3b7de28a8ea01baf56425b';
