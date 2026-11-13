@@ -18,6 +18,8 @@ const envSchema = z.object({
   OAUTH_ALLOWED_SUBJECTS: list,
   DEEPSEEK_MODE: z.enum(['mock', 'live']).default('mock'),
   DEEPSEEK_MODEL: modelSchema.default('deepseek-v4-pro'),
+  DEEPSEEK_THINKING_MODE: z.enum(['enabled', 'disabled']).default('disabled'),
+  DEEPSEEK_REASONING_EFFORT: z.enum(['low', 'high', 'max']).default('high'),
   DEEPSEEK_API_KEY: z.string().default(''),
   MOCK_DEEPSEEK_URL: z.url().default('http://127.0.0.1:4010'),
   ROUTING_ENABLED: bool('false'),

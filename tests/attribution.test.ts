@@ -21,6 +21,22 @@ test('only a completed live answer receives DeepSeek attribution; prompts cannot
   }
   const failure = toolResult('ask_deepseek', { ok: false, error: { code: 'UPSTREAM_TIMEOUT' } });
   assert.equal(failure.structuredContent.provenance.inference_status, 'unknown');
+  const empty = toolResult('ask_deepseek', { ok: false, mode: 'live', answer: '', answer_status: 'no_final_answer' });
+  assert.match(empty.content[0]!.text, /^【DeepSeek 已调用｜未产生最终回答】/);
+  assert.equal(empty.structuredContent.provenance.kind, 'no_final_answer');
+  assert.equal(empty.structuredContent.provenance.inference_status, 'completed_without_answer');
+  const emptyTruncated = toolResult('ask_deepseek', { ok: false, mode: 'live', answer: '',
+    answer_status: 'no_final_answer', truncated: true });
+  assert.equal(emptyTruncated.structuredContent.provenance.inference_status, 'truncated_without_answer');
+  const mockEmpty = toolResult('ask_deepseek', { ok: false, mode: 'mock', answer: '',
+    answer_status: 'no_final_answer', truncated: true });
+  assert.match(mockEmpty.content[0]!.text, /^【Mock 未产生最终回答｜未调用 DeepSeek】/);
+  assert.equal(mockEmpty.structuredContent.provenance.provider, 'mock');
+  assert.equal(mockEmpty.structuredContent.provenance.inference_status, 'mock_truncated_without_answer');
+  const partial = toolResult('ask_deepseek', { ...answer, truncated: true });
+  assert.equal(partial.structuredContent.provenance.inference_status, 'truncated');
+  const incomplete = toolResult('ask_deepseek', { ...answer, answer_status: 'incomplete' });
+  assert.equal(incomplete.structuredContent.provenance.inference_status, 'incomplete');
 });
 test('web tools and user-reported iPhone inference are recorded separately; health makes no inference', async t => {
   const f = await fixture({ CHATGPT_IOS_USER_VERIFIED_ON: '2026-11-11', CHATGPT_WEB_TOOLS_VERIFIED_ON: '2026-11-11' }); t.after(() => f.close());

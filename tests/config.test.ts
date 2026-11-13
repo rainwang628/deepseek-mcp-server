@@ -9,10 +9,14 @@ test('configuration defaults to mock with routing and paid requests off', () => 
   const c = config(); assert.equal(c.DEEPSEEK_MODE, 'mock'); assert.equal(c.ROUTING_ENABLED, false);
   assert.equal(c.ALLOW_PAID_REQUESTS, false); assert.equal(c.HOST, '127.0.0.1');
   assert.equal(c.DEEPSEEK_MODEL, 'deepseek-v4-pro');
+  assert.equal(c.DEEPSEEK_THINKING_MODE, 'disabled');
+  assert.equal(config({ DEEPSEEK_THINKING_MODE: 'enabled' }).DEEPSEEK_THINKING_MODE, 'enabled');
+  assert.equal(config({ DEEPSEEK_REASONING_EFFORT: 'low' }).DEEPSEEK_REASONING_EFFORT, 'low');
 });
 test('unsafe or ambiguous environment configuration fails closed without exposing values', () => {
   for (const env of [
     { ROUTING_ENABLED: 'yes' }, { ALLOW_PAID_REQUESTS: 'true' }, { DEEPSEEK_MODEL: 'guess' },
+    { DEEPSEEK_THINKING_MODE: 'guess' }, { DEEPSEEK_REASONING_EFFORT: 'guess' },
     { MCP_BEARER_TOKEN: 'weak' }, { HOST: '0.0.0.0' }, { PUBLIC_URL: 'http://mcp.example.com/mcp' },
     { PUBLIC_URL: 'https://mcp.example.com/mcp' },
     { MOCK_DEEPSEEK_URL: 'https://api.deepseek.com' }, { MOCK_DEEPSEEK_URL: 'http://localhost:4010' },

@@ -9,10 +9,10 @@ import { costNanos, modelSchema, PRICING_SOURCE, PRICING_VERIFIED_ON, RULES_REF,
 
 export const askSchema = z.strictObject({
   request_id: z.uuid().describe('A fresh UUID for a new task; reuse the same ID if delivery is uncertain. Duplicates never cause a second inference.'),
-  prompt: z.string().min(1).max(100000).describe('Only the task/content explicitly delegated by the user; avoid secrets.'),
+  prompt: z.string().min(1).max(100000).describe('Include the task goal, necessary background, relevant input, constraints and acceptance criteria; exclude credentials and unrelated private information.'),
   system_prompt: z.string().max(100000).optional(),
   model: modelSchema.optional().describe('Official documented model ID; defaults to the operator-selected model.'),
-  max_output_tokens: z.number().int().min(1).max(20480).optional(),
+  max_output_tokens: z.number().int().min(1).max(20480).optional().describe('Total output cap, including reasoning tokens when thinking is enabled.'),
   max_cost_usd: z.number().finite().positive().max(1000).optional().describe('Optional per-call limit, in addition to the stricter operator limit.'),
   dry_run: z.boolean().default(false).describe('Estimate only: no inference, no credential check, no budget debit. Works with routing disabled.'),
 });
@@ -26,12 +26,14 @@ export class DeepSeekService {
     const c = this.config;
     return { ok: true, service: 'deepseek-mcp-server', version: '0.1.0', transport: 'streamable-http',
       mode: c.DEEPSEEK_MODE, routing_enabled: c.ROUTING_ENABLED, paid_requests_allowed: c.ALLOW_PAID_REQUESTS,
-      model: c.DEEPSEEK_MODEL, api_key_configured: c.DEEPSEEK_API_KEY.length > 0,
+      model: c.DEEPSEEK_MODEL, thinking_mode: c.DEEPSEEK_THINKING_MODE,
+      reasoning_effort: c.DEEPSEEK_THINKING_MODE === 'enabled' ? c.DEEPSEEK_REASONING_EFFORT : null,
+      api_key_configured: c.DEEPSEEK_API_KEY.length > 0,
       pricing_verified_on: PRICING_VERIFIED_ON, pricing_current: pricingIsCurrent(), rules_ref: RULES_REF,
       capabilities: { text_input: true, text_output: true, image_input: false, native_image_output: false,
         direct_file_output: false, presentation_support: 'text_or_source_code_only' },
       limits: { max_input_bytes: c.MAX_INPUT_BYTES, max_total_tokens_estimate: c.MAX_TOTAL_TOKENS,
-        max_output_tokens: c.MAX_OUTPUT_TOKENS, max_cost_per_request_usd: c.MAX_COST_PER_REQUEST_USD,
+        max_output_tokens: c.MAX_OUTPUT_TOKENS, default_output_tokens: c.DEFAULT_OUTPUT_TOKENS, max_cost_per_request_usd: c.MAX_COST_PER_REQUEST_USD,
         max_calls_per_day: c.MAX_CALLS_PER_DAY },
       budget: this.ledger.summary(c), upstream_checked: false,
       client_validation: { chatgpt_plus: c.CHATGPT_WEB_TOOLS_VERIFIED_ON ? 'web_tools_verified_only' : 'unverified',
@@ -87,8 +89,15 @@ export class DeepSeekService {
       this.log({ event: 'request_completed', tool: 'ask_deepseek', request_id: input.request_id,
         mode: c.DEEPSEEK_MODE, model, duration_ms: Math.round(performance.now() - start),
         input_tokens: result.inputTokens, output_tokens: result.outputTokens, estimated_cost_usd: toUsd(actualCost) });
-      return { ok: true, request_id: input.request_id, mode: c.DEEPSEEK_MODE, model,
+      const hasAnswer = result.answer.trim().length > 0;
+      const answerStatus = !hasAnswer ? 'no_final_answer' : result.finishReason === 'length' ? 'truncated'
+        : result.finishReason === 'stop' ? 'available' : 'incomplete';
+      return { ok: hasAnswer, request_id: input.request_id, mode: c.DEEPSEEK_MODE, model,
         answer: result.answer, finish_reason: result.finishReason, truncated: result.finishReason === 'length',
+        answer_status: answerStatus,
+        ...(!hasAnswer ? { error: { code: 'NO_FINAL_ANSWER', message: result.finishReason === 'length'
+          ? 'No final answer was returned before the output or context limit. Usage was settled; no automatic retry was made.'
+          : 'No final answer was returned. Usage was settled; no automatic retry was made.' } } : {}),
         usage: { input_tokens: result.inputTokens, output_tokens: result.outputTokens, cached_input_tokens: result.cachedInputTokens },
         cost: { currency: 'USD', estimated_usd: toUsd(actualCost), mock_only: c.DEEPSEEK_MODE === 'mock',
           pricing_tier: 'peak', within_reservation: withinEstimate && actualCost <= upperCost },

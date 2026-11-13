@@ -28,14 +28,16 @@ test('deadline retains uncertain reservation, duplicate does not retry', async t
 });
 test('malformed/missing usage and oversized response fail closed with reservation held', async t => {
   const f = await fixture({ ROUTING_ENABLED: 'true', MAX_RESPONSE_BYTES: '1024' }); t.after(() => f.close()); const client = await f.client();
-  for (const response of [{ choices: [] }, { ...mockCompletion(), usage: { prompt_tokens: -1 } },
+  for (const response of [{ choices: [] }, { ...mockCompletion(), choices: [{ message: { reasoning_content: 'missing-content-test-sentinel' }, finish_reason: 'length' }] },
+    { ...mockCompletion(), usage: { prompt_tokens: -1 } },
     { ...mockCompletion(), usage: { prompt_tokens: 3, completion_tokens: 2, total_tokens: 6 } },
     { ...mockCompletion(), padding: 'x'.repeat(2000) }]) {
     f.mock.state.response = response;
     const r = await client.callTool({ name: 'ask_deepseek', arguments: args() });
     assert.equal(data(r).error.code, 'UPSTREAM_INVALID_RESPONSE');
   }
-  assert.equal(f.application.ledger.summary(f.c).unresolved_reservations, 4);
+  assert.equal(f.application.ledger.summary(f.c).unresolved_reservations, 5);
+  assert.equal(f.lines.join('').includes('missing-content-test-sentinel'), false);
 });
 test('upstream redirects are refused instead of following credential-exfiltration destinations', async t => {
   const f = await fixture({ ROUTING_ENABLED: 'true' }); t.after(() => f.close());

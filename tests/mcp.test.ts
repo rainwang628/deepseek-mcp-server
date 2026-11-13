@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { fixture } from './helpers.js';
-import { MOCK_ANSWER } from '../scripts/mock-deepseek.js';
+import { MOCK_ANSWER, mockCompletion } from '../scripts/mock-deepseek.js';
 const args = () => ({ request_id: randomUUID(), prompt: 'Summarize this explicitly delegated task.' });
 const data = (r: unknown) => (r as { structuredContent: Record<string, any> }).structuredContent;
 
@@ -16,8 +16,9 @@ test('standard MCP initializes, discovers schemas, health and dry-run make zero 
   assert.equal(tools[1]!._meta?.['openai/toolInvocation/invoking'], 'DS 工具处理中');
   assert.equal(tools[1]!._meta?.['openai/toolInvocation/invoked'], 'DS 工具处理结束');
   assert.match(tools[1]!.description ?? '', /cannot accept images, generate image or PPT files, or execute code/);
-  assert.match(client.getInstructions() ?? '', /当前 iOS 环境无法获取 Codex 账号共享额度/);
-  assert.match(client.getInstructions() ?? '', /不要仅因读取失败猜测设备为 iOS/);
+  assert.match(client.getInstructions() ?? '', /普通 Chat 和 DSH 不显示 MCP 分流、GPT 状态或用量提示/);
+  assert.doesNotMatch(client.getInstructions() ?? '', /当前 iOS 环境无法获取 Codex 账号共享额度/);
+  assert.match(client.getInstructions() ?? '', /不能猜测当前模式/);
   const health = data(await client.callTool({ name: 'health_check', arguments: {} }));
   assert.equal(health.routing_enabled, false);
   assert.equal(health.paid_requests_allowed, false);
@@ -76,12 +77,48 @@ test('mock completion returns answer, usage, cost and durable budget; no real ke
   assert.equal(f.mock.state.authorization, undefined);
   const sent = f.mock.state.lastBody as Record<string, any>;
   assert.equal(sent.max_tokens, 32); assert.equal(sent.thinking.type, 'disabled'); assert.equal(sent.stream, false);
+  assert.equal(sent.reasoning_effort, undefined);
   assert.equal(sent.tools, undefined);
   const duplicate = await client.callTool({ name: 'ask_deepseek', arguments: input });
   assert.equal(data(duplicate).error.code, 'DUPLICATE_REQUEST'); assert.equal(f.mock.state.calls, 1);
   const logs = f.lines.join('');
   for (const secret of [input.prompt, MOCK_ANSWER, 'test-sentinel-do-not-send', f.c.MCP_BEARER_TOKEN]) assert.equal(logs.includes(secret), false);
   assert.match(logs, /request_completed/);
+});
+test('thinking-enabled requests carry necessary context and do not expose reasoning content', async t => {
+  const f = await fixture({ ROUTING_ENABLED: 'true', DEEPSEEK_THINKING_MODE: 'enabled', DEEPSEEK_REASONING_EFFORT: 'low' });
+  t.after(() => f.close()); const client = await f.client();
+  const base = mockCompletion(20, 32);
+  const reasoning = 'private-reasoning-test-sentinel';
+  f.mock.state.response = { ...base, choices: [{ ...base.choices[0],
+    message: { ...base.choices[0]!.message, reasoning_content: reasoning } }] };
+  const input = { ...args(), prompt: 'Goal: summarize. Context: required relevant material. Constraints: be precise.' };
+  const raw = await client.callTool({ name: 'ask_deepseek', arguments: { ...input, max_output_tokens: 64 } });
+  const result = data(raw); const body = f.mock.state.lastBody as Record<string, any>;
+  assert.equal(body.thinking.type, 'enabled'); assert.equal(body.reasoning_effort, 'low');
+  assert.equal(body.messages[0].content, input.prompt);
+  assert.equal(result.answer, MOCK_ANSWER); assert.equal(result.answer_status, 'available');
+  assert.equal(result.usage.output_tokens, 32); assert.equal(result.budget.unresolved_reservations, 0);
+  assert.equal(JSON.stringify(raw).includes(reasoning), false); assert.equal(f.lines.join('').includes(reasoning), false);
+  assert.equal(f.mock.state.calls, 1);
+});
+test('a thinking response with no final answer is settled, reported, and never retried', async t => {
+  const f = await fixture({ ROUTING_ENABLED: 'true', DEEPSEEK_THINKING_MODE: 'enabled' });
+  t.after(() => f.close()); const client = await f.client(); const input = args();
+  const base = mockCompletion(20, 32); const reasoning = 'private-empty-reasoning-test-sentinel';
+  f.mock.state.response = { ...base, choices: [{ ...base.choices[0], finish_reason: 'length',
+    message: { ...base.choices[0]!.message, content: null, reasoning_content: reasoning } }] };
+  const raw = await client.callTool({ name: 'ask_deepseek', arguments: { ...input, max_output_tokens: 32 } });
+  const result = data(raw);
+  assert.equal(raw.isError, true); assert.equal(result.ok, false); assert.equal(result.answer_status, 'no_final_answer');
+  assert.equal(result.error.code, 'NO_FINAL_ANSWER'); assert.equal(result.truncated, true);
+  assert.equal(result.provenance.kind, 'mock_no_final_answer');
+  assert.equal(result.provenance.inference_status, 'mock_truncated_without_answer');
+  assert.equal(result.usage.output_tokens, 32); assert.ok(result.cost.estimated_usd > 0);
+  assert.equal(result.budget.unresolved_reservations, 0); assert.equal(f.mock.state.calls, 1);
+  assert.equal(JSON.stringify(raw).includes(reasoning), false); assert.equal(f.lines.join('').includes(reasoning), false);
+  const duplicate = await client.callTool({ name: 'ask_deepseek', arguments: input });
+  assert.equal(data(duplicate).error.code, 'DUPLICATE_REQUEST'); assert.equal(f.mock.state.calls, 1);
 });
 test('input, total, output and per-request cost limits reject before upstream dispatch', async t => {
   const f = await fixture({ ROUTING_ENABLED: 'true' }); t.after(() => f.close()); const client = await f.client();

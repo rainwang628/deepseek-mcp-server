@@ -15,6 +15,8 @@
 | `ALLOWED_ORIGINS` | 空 | 默认允许无 Origin 或公共 URL 自身 origin；需要时追加 `https://chatgpt.com` |
 | `DEEPSEEK_MODE` | `mock` | `mock` 只访问数字回环 HTTP，`live` 固定官方 HTTPS API |
 | `DEEPSEEK_MODEL` | `deepseek-v4-pro` | 官方文档确认的另一个可选值为 `deepseek-flash` |
+| `DEEPSEEK_THINKING_MODE` | `disabled` | `enabled` / `disabled`；思考和最终答案共用输出上限，需在运营者授权的实例上明确启用 |
+| `DEEPSEEK_REASONING_EFFORT` | `high` | 思考启用时可选 `low` / `high` / `max`；关闭时不发送该参数 |
 | `DEEPSEEK_API_KEY` | 空 | 仅 live 推理需要；不通过 health_check 验证或输出，不发往 Mock |
 | `MOCK_DEEPSEEK_URL` | `http://127.0.0.1:4010` | 只接受数字回环 HTTP origin，拒绝域名、路径、查询和凭据 |
 | `ROUTING_ENABLED` | `false` | 推理前必须明确开启；只接受字面量 `true` / `false` |
@@ -36,6 +38,8 @@
 本机运营配置见 [GLOBAL_ACCESS.md 的分流范围与费用](GLOBAL_ACCESS.md#分流范围与费用)：用户于 2026-11-12
 明确授权单次上限 $0.05，以容纳 20480 Token 输出的预留；其他共享预算保持不变。
 表中是新实例默认值，不应仅为调整一台已授权服务而修改默认付费开关或重置账本。
+思考模式可能增加耗时和输出 Token；若达到上限前未产生最终答案，返回 `NO_FINAL_ANSWER`，仍按实际 usage 结算，
+不会自动重试。服务不返回或记录 `reasoning_content`；返回的 `usage.output_tokens` 包含上游报告的总输出用量。
 
 OAuth scope 固定 `deepseek:invoke`，支持 RS256 / ES256 / EdDSA。HS256、自签名伪造令牌、过期/缺少 exp、
 错误 issuer/audience/scope/subject 均拒绝。只将 `http://127.0.0.1` 或 `[::1]` 视为本地测试例外。

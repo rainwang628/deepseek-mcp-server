@@ -43,7 +43,9 @@ export class DeepSeekClient {
     if (this.c.DEEPSEEK_MODE === 'live') headers.Authorization = `Bearer ${this.c.DEEPSEEK_API_KEY}`;
     try {
       const response = await fetch(url, { method: 'POST', headers, redirect: 'error', signal: combined,
-        body: JSON.stringify({ model, messages, max_tokens: maxTokens, stream: false, thinking: { type: 'disabled' } }) });
+        body: JSON.stringify({ model, messages, max_tokens: maxTokens, stream: false,
+          thinking: { type: this.c.DEEPSEEK_THINKING_MODE },
+          ...(this.c.DEEPSEEK_THINKING_MODE === 'enabled' ? { reasoning_effort: this.c.DEEPSEEK_REASONING_EFFORT } : {}) }) });
       if (!response.ok) {
         await response.body?.cancel();
         if (response.status === 401 || response.status === 403) throw new AppError('UPSTREAM_AUTH');
